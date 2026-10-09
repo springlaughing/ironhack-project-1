@@ -41,7 +41,9 @@ services:
 
   redis:
     image: redis:alpine
+    command: ["redis-server", "--appendonly", "yes"]
     volumes:
+      - "redis-data:/data" 
       - "./healthchecks:/healthchecks"
     healthcheck:
       test: /healthchecks/redis.sh
@@ -67,6 +69,7 @@ services:
 
 volumes:
   db-data:
+  redis-data:
 
 networks:
   back-tier:
