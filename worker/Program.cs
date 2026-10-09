@@ -7,15 +7,25 @@ using System.Threading;
 using Newtonsoft.Json;
 using Npgsql;
 using StackExchange.Redis;
+using System.Runtime.InteropServices;
 
 namespace Worker
 {
     public class Program
     {
+        // Set when docker stop sends SIGTERM; the loop checks it before each vote
+        private static volatile bool stopping = false;
         public static int Main(string[] args)
         {
             try
             {
+                // docker stop sends SIGTERM: finish the current vote, then exit cleanly
+                using var sigterm = PosixSignalRegistration.Create(PosixSignal.SIGTERM, context =>
+                {
+                    context.Cancel = true;   // don't let .NET end the program right away
+                    stopping = true;
+                    Console.WriteLine("Shutdown requested: finishing the current vote");
+                });
                 // Fetch configuration from environment variables
                 var dbHost = Environment.GetEnvironmentVariable("DB_HOST") ?? "db";
                 var dbUsername = Environment.GetEnvironmentVariable("DB_USERNAME") ?? "postgres";
@@ -47,7 +57,7 @@ namespace Worker
                 // Votes this container took before a crash: save them first
                 FinishUnfinished(redis, pgsql, processingList);
 
-                while (true)
+                while (!stopping)
                 {
                     // Reconnect redis if down
                     if (redisConn == null || !redisConn.IsConnected)
@@ -82,6 +92,8 @@ namespace Worker
                         Thread.Sleep(100);
                     }
                 }
+                Console.WriteLine("Stopped cleanly");
+                return 0;
             }
             catch (Exception ex)
             {
