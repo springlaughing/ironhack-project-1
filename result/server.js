@@ -47,29 +47,20 @@ console.log(connectionString);
 var { Pool } = require('pg');
 var pool = new Pool({ connectionString: connectionString });
 
-async.retry(
-  { times: 1000, interval: 1000 },
-  function (callback) {
-    pool.connect(function (err, client, done) {
-      if (err) {
-        console.error("Waiting for db");
-      }
-      callback(err, client);
-    });
-  },
-  function (err, client) {
-    if (err) {
-      return console.error("Giving up");
-    }
-    console.log("Connected to db");
-    getVotes(client);
-  }
-);
+// When the database restarts, idle connections in the pool break and the pool
+// emits 'error'. Without this handler Node.js treats it as fatal (experiment 3).
+pool.on('error', function (err) {
+  console.error("Database connection lost: " + err.message);
+});
 
-function getVotes(client) {
-  client.query('SELECT vote, COUNT(id) AS count FROM votes GROUP BY vote', [], function (err, result) {
+getVotes();
+
+function getVotes() {
+  // pool.query borrows a working connection each time and opens a new one
+  // if the old one broke, so a database restart only skips a few updates.
+  pool.query('SELECT vote, COUNT(id) AS count FROM votes GROUP BY vote', function (err, result) {
     if (err) {
-      console.error("Error performing query: " + err);
+      console.error("Waiting for db: " + err.message);
     } else {
       var votes = collectVotesFromResult(result);
 
@@ -79,7 +70,7 @@ function getVotes(client) {
     }
 
     // Repeat periodically
-    setTimeout(function () { getVotes(client); }, 1000);
+    setTimeout(getVotes, 1000);
   });
 }
 
