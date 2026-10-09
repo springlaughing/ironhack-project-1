@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, make_response, g
-from redis import Redis
+from redis import Redis, RedisError
 import os
 import socket
 import random
@@ -32,13 +32,19 @@ def hello():
         voter_id = hex(random.getrandbits(64))[2:-1]
 
     vote = None
+    error = None
 
     if request.method == 'POST':
-        redis = get_redis()
         vote = request.form['vote']
-        app.logger.info('Received vote for %s', vote)
         data = json.dumps({'voter_id': voter_id, 'vote': vote})
-        redis.rpush('votes', data)
+        try:
+            get_redis().rpush('votes', data)
+            app.logger.info('Received vote for %s', vote)
+        except RedisError as e:
+            # Redis is down: say so, and show no checkmark
+            app.logger.error('Could not store vote: %s', e)
+            vote = None
+            error = "Your vote was not counted. Please try again in a moment."
 
     resp = make_response(render_template(
         'index.html',
@@ -46,7 +52,8 @@ def hello():
         option_b=option_b,
         hostname=hostname,
         vote=vote,
-    ))
+        error=error,
+    ), 503 if error else 200)
     resp.set_cookie('voter_id', voter_id)
     return resp
 

@@ -18,6 +18,9 @@
           <button id="a" type="submit" name="vote" class="a" value="a">{{option_a}}</button>
           <button id="b" type="submit" name="vote" class="b" value="b">{{option_b}}</button>
         </form>
+        {% if error %}
+        <div id="error" style="margin-top:20px;color:#b00020;font-weight:bold">{{ error }}</div>
+        {% endif %}
         <div id="tip">
           (Tip: you can change your vote)
         </div>
