@@ -3,8 +3,7 @@
 
 services:
   vote:
-    image: pokfinner/vote:latest
- #  build: ./vote
+    build: ./vote
     depends_on:
       redis:
         condition: service_healthy 
