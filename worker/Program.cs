@@ -36,8 +36,7 @@ namespace Worker
 
                 // Construct the connection strings
                 var pgConnectionString = $"Server={dbHost};Username={dbUsername};Password={dbPassword};Database={dbName}";
-                Console.WriteLine($"Database connection string: {pgConnectionString}");
-                var redisConnectionString = redisHost;
+                Console.WriteLine($"Connecting to database at {dbHost} as {dbUsername}");                var redisConnectionString = redisHost;
 
                 var pgsql = OpenDbConnection(pgConnectionString);
                 var redisConn = OpenRedisConnection(redisConnectionString);
