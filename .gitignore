@@ -9,3 +9,4 @@ __pycache__/
 .terraform/
 *.tfvars
 .env
+loadtest/last-k6.txt
