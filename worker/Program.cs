@@ -43,10 +43,7 @@ namespace Worker
                 var redisConn = OpenRedisConnection(redisConnectionString);
                 var redis = redisConn.GetDatabase();
 
-                // Keep alive is not implemented in Npgsql yet. This workaround was recommended:
-                // https://github.com/npgsql/npgsql/issues/1214#issuecomment-235828359
-                var keepAliveCommand = pgsql.CreateCommand();
-                keepAliveCommand.CommandText = "SELECT 1";
+
 
                 var definition = new { vote = "", voter_id = "" };
 
@@ -57,7 +54,7 @@ namespace Worker
                 // Votes this container took before a crash: save them first
                 FinishUnfinished(redis, pgsql, processingList);
 
-                while (!stopping)
+                                while (!stopping)
                 {
                     // Reconnect redis if down
                     if (redisConn == null || !redisConn.IsConnected)
@@ -69,28 +66,33 @@ namespace Worker
 
                     // Move one vote from the queue into my in-progress list, in one atomic step
                     string? json = redis.ListMove("votes", processingList, ListSide.Left, ListSide.Right);
-                    if (json != null)
-                    {
-                        var vote = JsonConvert.DeserializeAnonymousType(json, definition);
-                        Console.WriteLine($"Processing vote for '{vote.vote}' by '{vote.voter_id}'");
-
-                        // Reconnect DB if down, then save (the old code skipped this vote)
-                        if (!pgsql.State.Equals(System.Data.ConnectionState.Open))
-                        {
-                            Console.WriteLine("Reconnecting DB");
-                            pgsql = OpenDbConnection(pgConnectionString);
-                        }
-                        UpdateVote(pgsql, vote.voter_id, vote.vote);
-
-                        // Saved: only now remove it from my in-progress list
-                        redis.ListRemove(processingList, json, 1);
-                    }
-                    else
+                    if (json == null)
                     {
                         // Queue is empty: pause briefly instead of asking Redis nonstop
-                        keepAliveCommand.ExecuteNonQuery();
                         Thread.Sleep(100);
+                        continue;
                     }
+
+                    var vote = JsonConvert.DeserializeAnonymousType(json, definition);
+                    Console.WriteLine($"Processing vote for '{vote.vote}' by '{vote.voter_id}'");
+
+                    try
+                    {
+                        UpdateVote(pgsql, vote.voter_id, vote.vote);
+                    }
+                    catch (Exception e) when (e is NpgsqlException || e is InvalidOperationException)
+                    {
+                        // The database restarted or the connection broke: reconnect instead of crashing.
+                        // The vote is still in my in-progress list, so FinishUnfinished saves it now.
+                        Console.WriteLine($"Database connection lost ({e.Message}), reconnecting");
+                        pgsql.Dispose();
+                        pgsql = OpenDbConnection(pgConnectionString);
+                        FinishUnfinished(redis, pgsql, processingList);
+                        continue;
+                    }
+
+                    // Saved: only now remove it from my in-progress list
+                    redis.ListRemove(processingList, json, 1);
                 }
                 Console.WriteLine("Stopped cleanly");
                 return 0;
