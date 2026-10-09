@@ -14,8 +14,7 @@ services:
       - back-tier
 
   result:
-    image: pokfinner/result:latest
- #  build: ./result
+    build: ./result
     depends_on:
       db:
         condition: service_healthy 
