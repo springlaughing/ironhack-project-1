@@ -39,11 +39,16 @@ namespace Worker
                 keepAliveCommand.CommandText = "SELECT 1";
 
                 var definition = new { vote = "", voter_id = "" };
+
+                // Each Worker container gets its own in-progress list, named after its hostname
+                var processingList = $"votes:processing:{Environment.MachineName}";
+                Console.WriteLine($"In-progress list: {processingList}");
+
+                // Votes this container took before a crash: save them first
+                FinishUnfinished(redis, pgsql, processingList);
+
                 while (true)
                 {
-                    // Slow down to prevent CPU spike, only query each 100ms
-                    //Thread.Sleep(100);
-
                     // Reconnect redis if down
                     if (redisConn == null || !redisConn.IsConnected)
                     {
@@ -52,27 +57,27 @@ namespace Worker
                         redis = redisConn.GetDatabase();
                     }
 
-                    string json = redis.ListLeftPopAsync("votes").Result;
+                    // Move one vote from the queue into my in-progress list, in one atomic step
+                    string? json = redis.ListMove("votes", processingList, ListSide.Left, ListSide.Right);
                     if (json != null)
                     {
                         var vote = JsonConvert.DeserializeAnonymousType(json, definition);
                         Console.WriteLine($"Processing vote for '{vote.vote}' by '{vote.voter_id}'");
 
-                        // Reconnect DB if down
+                        // Reconnect DB if down, then save (the old code skipped this vote)
                         if (!pgsql.State.Equals(System.Data.ConnectionState.Open))
                         {
                             Console.WriteLine("Reconnecting DB");
                             pgsql = OpenDbConnection(pgConnectionString);
                         }
-                        else
-                        { // Normal +1 vote requested
-                            UpdateVote(pgsql, vote.voter_id, vote.vote);
-                        }
+                        UpdateVote(pgsql, vote.voter_id, vote.vote);
+
+                        // Saved: only now remove it from my in-progress list
+                        redis.ListRemove(processingList, json, 1);
                     }
                     else
                     {
                         // Queue is empty: pause briefly instead of asking Redis nonstop
-
                         keepAliveCommand.ExecuteNonQuery();
                         Thread.Sleep(100);
                     }
@@ -149,6 +154,21 @@ namespace Worker
                 .First(a => a.AddressFamily == AddressFamily.InterNetwork)
                 .ToString();
 
+                private static void FinishUnfinished(IDatabase redis, NpgsqlConnection pgsql, string processingList)
+        {
+            var definition = new { vote = "", voter_id = "" };
+            var leftovers = redis.ListRange(processingList);
+            if (leftovers.Length > 0)
+                Console.WriteLine($"Finishing {leftovers.Length} unfinished vote(s)");
+
+            foreach (var item in leftovers)
+            {
+                string json = item.ToString();
+                var vote = JsonConvert.DeserializeAnonymousType(json, definition);
+                UpdateVote(pgsql, vote.voter_id, vote.vote);
+                redis.ListRemove(processingList, json, 1);
+            }
+        }
         private static void UpdateVote(NpgsqlConnection connection, string voterId, string vote)
         {
             using var command = connection.CreateCommand();
