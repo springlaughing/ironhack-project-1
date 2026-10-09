@@ -42,7 +42,7 @@ namespace Worker
                 while (true)
                 {
                     // Slow down to prevent CPU spike, only query each 100ms
-                    Thread.Sleep(100);
+                    //Thread.Sleep(100);
 
                     // Reconnect redis if down
                     if (redisConn == null || !redisConn.IsConnected)
@@ -71,7 +71,10 @@ namespace Worker
                     }
                     else
                     {
+                        // Queue is empty: pause briefly instead of asking Redis nonstop
+
                         keepAliveCommand.ExecuteNonQuery();
+                        Thread.Sleep(100);
                     }
                 }
             }
