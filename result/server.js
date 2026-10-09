@@ -38,7 +38,8 @@ resultNamespace.on('connection', function (socket) {
 var pgHost = process.env.PG_HOST || 'db';
 var pgPort = process.env.PG_PORT || 5432;
 var pgUser = process.env.PG_USER || 'postgres';
-var pgPassword = process.env.PG_PASSWORD || 'postgres';
+var pgPassword = process.env.PG_PASSWORD;
+if (!pgPassword) { console.error("PG_PASSWORD is not set"); process.exit(1); }
 var pgDatabase = process.env.PG_DATABASE || 'postgres';
 
 var connectionString = `postgresql://${pgUser}:${pgPassword}@${pgHost}:${pgPort}/${pgDatabase}`;
