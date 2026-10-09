@@ -57,6 +57,14 @@ def hello():
     resp.set_cookie('voter_id', voter_id)
     return resp
 
+@app.route("/health")
+def health():
+    # Healthy only if Redis answers: a Vote server that can't store votes is not healthy
+    try:
+        get_redis().ping()
+        return {"status": "ok", "redis": "ok"}, 200
+    except RedisError as e:
+        return {"status": "error", "redis": str(e)}, 503
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=os.getenv('PORT', 80), debug=True, threaded=True)
