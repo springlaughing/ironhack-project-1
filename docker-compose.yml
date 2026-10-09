@@ -35,7 +35,14 @@ services:
         condition: service_healthy
       db:
         condition: service_healthy
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
     restart: unless-stopped
+    stop_grace_period: 30s
     networks:
       - back-tier
 
