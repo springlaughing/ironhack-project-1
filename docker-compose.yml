@@ -14,6 +14,8 @@ services:
 
   result:
     build: ./result
+    environment:
+      PG_PASSWORD: "${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}"
     depends_on:
       db:
         condition: service_healthy 
@@ -24,6 +26,8 @@ services:
 
   worker:
     build: ./worker
+    environment:
+      DB_PASSWORD: "${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}"
     depends_on:
       redis:
         condition: service_healthy
@@ -46,7 +50,7 @@ services:
     image: postgres:15-alpine
     environment:
       POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}"
     volumes:
       - "db-data:/var/lib/postgresql/data"
       - "./healthchecks:/healthchecks"
