@@ -25,13 +25,12 @@ services:
       - back-tier
 
   worker:
- #  build: ./worker
-    image: pokfinner/worker:latest
+    build: ./worker
     depends_on:
       redis:
-        condition: service_healthy 
+        condition: service_healthy
       db:
-        condition: service_healthy 
+        condition: service_healthy
     networks:
       - back-tier
 
