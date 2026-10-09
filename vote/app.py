@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, make_response, g
 from redis import Redis, RedisError
+from redis.retry import Retry
+from redis.backoff import NoBackoff
 import os
 import socket
 import random
@@ -21,7 +23,10 @@ app.logger.setLevel(logging.INFO)
 
 def get_redis():
     if not hasattr(g, 'redis'):
-        g.redis = Redis(host=redis_host, port=redis_port, db=0, socket_timeout=5)
+        g.redis = Redis(host=redis_host, port=redis_port, db=0,
+                        socket_connect_timeout=2,      # give up connecting after 2 s
+                        socket_timeout=2,              # give up waiting for an answer after 2 s
+                        retry=Retry(NoBackoff(), 0))   # no automatic retries: fail fast, the user retries
     return g.redis
 
 @app.route("/", methods=['POST','GET'])
