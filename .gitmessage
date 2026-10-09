@@ -1,0 +1,7 @@
+# type(scope): short description, under 72 characters
+# types: feat fix refactor docs test build ci chore
+# scopes: worker vote result compose terraform ansible
+
+# Why this change? (optional, wrap at 72 characters)
+
+# Closes #
