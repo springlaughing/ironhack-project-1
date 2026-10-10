@@ -4,6 +4,7 @@
 services:
   vote:
     build: ./vote
+    image: ${REGISTRY_USER:-local}/voting-vote:${IMAGE_TAG:-dev}
     depends_on:
       redis:
         condition: service_healthy
@@ -15,6 +16,7 @@ services:
 
   result:
     build: ./result
+    image: ${REGISTRY_USER:-local}/voting-result:${IMAGE_TAG:-dev}
     environment:
       PG_PASSWORD: "${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}"
     depends_on:
@@ -28,6 +30,7 @@ services:
 
   worker:
     build: ./worker
+    image: ${REGISTRY_USER:-local}/voting-worker:${IMAGE_TAG:-dev}
     environment:
       DB_PASSWORD: "${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}"
     depends_on:
