@@ -21,3 +21,9 @@ variable "nat_zones" {
   type        = list(string)
   default     = ["a"]
 }
+
+variable "domain_name" {
+  description = "My domain, bought at Porkbun"
+  type        = string
+  default     = "springlaughing.dev"
+}
