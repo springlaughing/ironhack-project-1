@@ -17,3 +17,8 @@ output "data_subnet_ids" {
 output "nat_public_ips" {
   value = { for k, e in aws_eip.nat : k => e.public_ip }
 }
+
+output "name_servers" {
+  description = "Paste these 4 into Porkbun as the domain's nameservers"
+  value       = aws_route53_zone.public.name_servers
+}
