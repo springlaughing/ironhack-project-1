@@ -85,3 +85,29 @@ resource "aws_route_table_association" "data" {
   subnet_id      = aws_subnet.data[each.key].id
   route_table_id = aws_route_table.private[each.key].id
 }
+
+# A fixed public IP address for each NAT gateway.
+resource "aws_eip" "nat" {
+  for_each = toset(var.nat_zones)
+  domain   = "vpc"
+  tags     = { Name = "${var.name_prefix}-nat-${each.key}" }
+}
+
+# NAT gateway: lets private servers reach the internet; nothing can reach in.
+resource "aws_nat_gateway" "main" {
+  for_each      = toset(var.nat_zones)
+  allocation_id = aws_eip.nat[each.key].id
+  subnet_id     = aws_subnet.public[each.key].id # lives in a public subnet
+  tags          = { Name = "${var.name_prefix}-nat-${each.key}" }
+
+  depends_on = [aws_internet_gateway.main] # needs the internet gateway to work
+}
+
+# Each private route table sends outside traffic to its own zone's NAT,
+# or to the first NAT if its zone has none. No NAT at all: no route.
+resource "aws_route" "private_internet" {
+  for_each               = { for k, z in local.zones : k => z if length(var.nat_zones) > 0 }
+  route_table_id         = aws_route_table.private[each.key].id
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = aws_nat_gateway.main[contains(var.nat_zones, each.key) ? each.key : var.nat_zones[0]].id
+}

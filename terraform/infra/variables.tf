@@ -15,3 +15,9 @@ variable "vpc_cidr" {
   type        = string
   default     = "10.0.0.0/16"
 }
+
+variable "nat_zones" {
+  description = "Zones that get a NAT gateway. [] = none (saves money), [\"a\", \"b\"] in step 3"
+  type        = list(string)
+  default     = ["a"]
+}
