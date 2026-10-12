@@ -26,3 +26,15 @@ output "name_servers" {
 output "server_instance_profile" {
   value = aws_iam_instance_profile.server.name
 }
+
+output "servers" {
+  value = {
+    a1 = { id = aws_instance.a1.id, ip = aws_instance.a1.private_ip }
+    b1 = { id = aws_instance.b1.id, ip = aws_instance.b1.private_ip }
+    c1 = { id = aws_instance.c1.id, ip = aws_instance.c1.private_ip }
+  }
+}
+
+output "c1_data_volume" {
+  value = aws_ebs_volume.c1_data.id
+}

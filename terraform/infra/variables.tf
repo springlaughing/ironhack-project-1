@@ -19,11 +19,17 @@ variable "vpc_cidr" {
 variable "nat_zones" {
   description = "Zones that get a NAT gateway. [] = none (saves money), [\"a\", \"b\"] in step 3"
   type        = list(string)
-  default     = [] # no servers yet; set to ["a"] in issue #15
+  default     = ["a"] # no servers yet; set to ["a"] in issue #15
 }
 
 variable "domain_name" {
   description = "My domain, bought at Porkbun"
   type        = string
   default     = "springlaughing.dev"
+}
+
+variable "instance_type" {
+  description = "Size of every server"
+  type        = string
+  default     = "t3.micro"
 }
