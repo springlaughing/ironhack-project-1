@@ -1,0 +1,13 @@
+# How to reach every server: Session Manager, not SSH.
+ansible_connection: community.aws.aws_ssm
+ansible_aws_ssm_region: us-east-1
+ansible_aws_ssm_bucket_name: evgenia-voting-ansible-686699774218   # file transfers go through this bucket
+
+# Which images to run (tags = the Git commit each image was built from).
+registry_user: springlaughing
+vote_tag: e0035c5       # with the jQuery-over-HTTPS fix (#32)
+result_tag: 076c2f6
+worker_tag: 076c2f6
+
+# Where the compose file and .env live on each server.
+app_dir: /opt/voting

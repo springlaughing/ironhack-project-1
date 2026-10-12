@@ -1,0 +1,4 @@
+# C1's data disk from Terraform (output c1_data_volume). Ubuntu lists it under this
+# stable name, built from the disk ID without the dash, no matter if it's nvme1n1 or nvme2n1.
+data_volume_id: vol-016cf11c482279935
+data_disk: "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_{{ data_volume_id | replace('-', '') }}"

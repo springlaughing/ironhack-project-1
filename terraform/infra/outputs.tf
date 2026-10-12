@@ -46,3 +46,7 @@ output "site_url" {
 output "alb_dns_name" {
   value = aws_lb.main.dns_name
 }
+
+output "ansible_bucket" {
+  value = aws_s3_bucket.ansible.bucket
+}

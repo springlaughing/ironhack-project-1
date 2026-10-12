@@ -1,0 +1,25 @@
+- name: Folder for the compose file
+  ansible.builtin.file:
+    path: "{{ app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Compose file for this server's role
+  ansible.builtin.template:
+    src: "{{ compose_template }}"
+    dest: "{{ app_dir }}/compose.yml"
+    mode: "0644"
+
+- name: Settings with the database password (only root may read it)
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ app_dir }}/.env"
+    mode: "0600"
+  no_log: true                     # never print the password in Ansible's output
+
+- name: Start or update the containers
+  ansible.builtin.command:
+    cmd: docker compose up -d --remove-orphans --wait
+    chdir: "{{ app_dir }}"
+  register: compose
+  changed_when: "'Started' in compose.stderr or 'Recreated' in compose.stderr or 'Created' in compose.stderr"
