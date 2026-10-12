@@ -38,3 +38,11 @@ output "servers" {
 output "c1_data_volume" {
   value = aws_ebs_volume.c1_data.id
 }
+
+output "site_url" {
+  value = "https://${aws_route53_record.vote.fqdn}"
+}
+
+output "alb_dns_name" {
+  value = aws_lb.main.dns_name
+}

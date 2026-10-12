@@ -13,6 +13,19 @@ resource "aws_route53_zone" "public" {
   tags    = { Name = "${var.name_prefix}-zone" }
 }
 
+# vote.springlaughing.dev → the load balancer.
+resource "aws_route53_record" "vote" {
+  zone_id = aws_route53_zone.public.zone_id
+  name    = "vote.${var.domain_name}"
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.main.dns_name
+    zone_id                = aws_lb.main.zone_id
+    evaluate_target_health = false
+  }
+}
+
 # Private zone: these names only exist inside my VPC.
 resource "aws_route53_zone" "internal" {
   name    = "voting.internal"
