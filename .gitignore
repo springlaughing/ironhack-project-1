@@ -9,7 +9,7 @@ __pycache__/
 .terraform/
 *.tfvars
 .env
-loadtest/last-k6.txt
+loadtest/last-k6*.txt
 # Ansible: tool caches and anything that looks like a Vault password
 .ansible/
 *.retry

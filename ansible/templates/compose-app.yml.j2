@@ -1,6 +1,8 @@
 services:
   vote:
     image: "{{ registry_user }}/voting-vote:{{ vote_tag }}"
+    command: ["gunicorn", "app:app", "-b", "0.0.0.0:80", "--log-file", "-", "--access-logfile", "-",
+              "--workers", "{{ vote_gunicorn_workers }}", "--keep-alive", "0"]
     environment:
       REDIS_HOST: redis-a.voting.internal        # no password: Vote never touches the database
     ports: ["8080:80"]                           # the load balancer's target group "vote"

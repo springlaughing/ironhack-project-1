@@ -6,7 +6,7 @@ services:
       DB_HOST: db-write.voting.internal
       DB_PASSWORD: "${POSTGRES_PASSWORD:?set in .env}"
     deploy:
-      replicas: 3
+      replicas: {{ worker_replicas }}
       resources:
         limits:
           cpus: "0.50"
