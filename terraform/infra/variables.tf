@@ -19,7 +19,7 @@ variable "vpc_cidr" {
 variable "nat_zones" {
   description = "Zones that get a NAT gateway. [] = none (saves money), [\"a\", \"b\"] in step 3"
   type        = list(string)
-  default     = ["a"]
+  default     = [] # no servers yet; set to ["a"] in issue #15
 }
 
 variable "domain_name" {
