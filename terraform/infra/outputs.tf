@@ -22,3 +22,7 @@ output "name_servers" {
   description = "Paste these 4 into Porkbun as the domain's nameservers"
   value       = aws_route53_zone.public.name_servers
 }
+
+output "server_instance_profile" {
+  value = aws_iam_instance_profile.server.name
+}
