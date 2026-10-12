@@ -5,6 +5,7 @@ import { check } from 'k6';
 
 const RATE = Number(__ENV.RATE || 400);
 const DURATION = __ENV.DURATION || '5s';
+const TARGET = __ENV.TARGET || 'http://vote/';   // where to send votes; default = local compose
 
 export const options = {
   scenarios: {
@@ -26,8 +27,7 @@ export const options = {
 export default function () {
   // A unique voter per request, so every vote becomes its own row
   const voter = `k6-${__VU}-${__ITER}`;
-  const res = http.post('http://vote/', { vote: Math.random() < 0.5 ? 'a' : 'b' }, {
-    headers: { Cookie: `voter_id=${voter}` },
+  const res = http.post(TARGET, { vote: Math.random() < 0.5 ? 'a' : 'b' }, {    headers: { Cookie: `voter_id=${voter}` },
   });
   check(res, { 'vote accepted (200)': (r) => r.status === 200 });
 }
