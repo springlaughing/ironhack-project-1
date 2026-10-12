@@ -12,3 +12,35 @@ resource "aws_route53_zone" "public" {
   comment = "Public names for the voting app"
   tags    = { Name = "${var.name_prefix}-zone" }
 }
+
+# Private zone: these names only exist inside my VPC.
+resource "aws_route53_zone" "internal" {
+  name    = "voting.internal"
+  comment = "Private names for the voting app servers"
+
+  vpc {
+    vpc_id = aws_vpc.main.id # attaching a VPC is what makes the zone private
+  }
+
+  tags = { Name = "${var.name_prefix}-internal" }
+}
+
+# Which name points where. Step 2: everything lives on C1.
+locals {
+  internal_names = {
+    "redis-a"   = aws_instance.c1.private_ip
+    "db-write"  = aws_instance.c1.private_ip
+    "db-read-a" = aws_instance.c1.private_ip
+  }
+}
+
+# One A record per name: "redis-a.voting.internal is 10.0.20.68"
+resource "aws_route53_record" "internal" {
+  for_each = local.internal_names
+
+  zone_id = aws_route53_zone.internal.zone_id
+  name    = "${each.key}.${aws_route53_zone.internal.name}"
+  type    = "A"   # A record = name → IPv4 address
+  ttl     = 60    # servers may remember the answer for 60 seconds, so a change takes effect within a minute
+  records = [each.value]
+}
