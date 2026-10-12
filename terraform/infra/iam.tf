@@ -37,3 +37,24 @@ resource "aws_iam_instance_profile" "server" {
   role = aws_iam_role.server.name
   tags = { Name = "${var.name_prefix}-server" }
 }
+
+# The snapshot service's identity: Data Lifecycle Manager (DLM) wears this role
+# to create and delete snapshots of the data disks.
+resource "aws_iam_role" "dlm" {
+  name        = "${var.name_prefix}-dlm"
+  description = "Lets Data Lifecycle Manager snapshot the data disks"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "dlm.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+  tags = { Name = "${var.name_prefix}-dlm" }
+}
+
+resource "aws_iam_role_policy_attachment" "dlm" {
+  role       = aws_iam_role.dlm.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSDataLifecycleManagerServiceRole"
+}

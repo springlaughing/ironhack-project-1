@@ -34,3 +34,7 @@ output "servers" {
     c1 = { id = aws_instance.c1.id, ip = aws_instance.c1.private_ip }
   }
 }
+
+output "c1_data_volume" {
+  value = aws_ebs_volume.c1_data.id
+}
