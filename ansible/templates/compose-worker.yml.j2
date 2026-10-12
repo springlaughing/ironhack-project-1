@@ -1,0 +1,15 @@
+services:
+  worker:
+    image: "{{ registry_user }}/voting-worker:{{ worker_tag }}"
+    environment:
+      REDIS_HOST: redis-a.voting.internal
+      DB_HOST: db-write.voting.internal
+      DB_PASSWORD: "${POSTGRES_PASSWORD:?set in .env}"
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+    stop_grace_period: 30s                       # time to finish the vote in hand (fault 3)
+    restart: unless-stopped

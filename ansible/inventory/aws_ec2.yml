@@ -1,0 +1,15 @@
+# Dynamic inventory: ask AWS for my running servers, every time Ansible starts.
+plugin: amazon.aws.aws_ec2
+regions:
+  - us-east-1
+filters:
+  tag:Project: ironhack-project-1   # only this project's servers...
+  tag:Owner: evgenia                # ...and only mine (shared account)
+  instance-state-name: running
+hostnames:
+  - tag:Name                        # call them evgenia-voting-a1, -b1, -c1
+keyed_groups:
+  - key: tags.Role                  # group by the Role tag: role_app, role_worker, role_data
+    prefix: role
+compose:
+  ansible_host: instance_id         # Session Manager connects by instance ID, not by address

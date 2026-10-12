@@ -1,0 +1,57 @@
+# Play 1: every server gets Docker.
+- name: Install Docker on every server
+  hosts: all
+  become: true                     # run as root (ssm-user may use sudo)
+  tasks:
+    - name: Install Docker and the compose plugin from Ubuntu's packages
+      ansible.builtin.apt:
+        name: [docker.io, docker-compose-v2]
+        state: present
+        update_cache: true
+        cache_valid_time: 3600     # refresh the package list at most once an hour
+
+    - name: Start Docker now and at every boot
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+# Play 2: C1 first, because A1 and B1 need Redis and PostgreSQL.
+- name: Data server C1 - data disk, Redis, PostgreSQL
+  hosts: role_data
+  become: true
+  tasks:
+    - name: Put a filesystem on the data disk (only if it has none, never reformats)
+      community.general.filesystem:
+        dev: "{{ data_disk }}"
+        fstype: ext4
+
+    - name: Mount the data disk at /data, now and at every boot
+      ansible.posix.mount:
+        path: /data
+        src: "{{ data_disk }}"
+        fstype: ext4
+        opts: defaults,nofail      # nofail = C1 still boots if the disk is missing
+        state: mounted
+
+    - name: Folders for the database and the Redis queue on the data disk
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop: [/data/postgres, /data/redis]
+
+    - name: Compose file and settings for C1
+      ansible.builtin.include_tasks: tasks/deploy.yml
+      vars:
+        compose_template: compose-data.yml.j2
+
+# Play 3: A1 (Vote, Result) and B1 (Workers).
+- name: App servers - Vote and Result on A, Workers on B
+  hosts: role_app:role_worker
+  become: true
+  tasks:
+    - name: Compose file and settings for this server
+      ansible.builtin.include_tasks: tasks/deploy.yml
+      vars:
+        compose_template: "{{ 'compose-app.yml.j2' if 'role_app' in group_names else 'compose-worker.yml.j2' }}"
