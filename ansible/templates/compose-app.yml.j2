@@ -4,14 +4,14 @@ services:
     command: ["gunicorn", "app:app", "-b", "0.0.0.0:80", "--log-file", "-", "--access-logfile", "-",
               "--workers", "{{ vote_gunicorn_workers }}", "--keep-alive", "0"]
     environment:
-      REDIS_HOST: redis-a.voting.internal        # no password: Vote never touches the database
+      REDIS_HOST: redis-{{ zone }}.voting.internal        # no password: Vote never touches the database
     ports: ["8080:80"]                           # the load balancer's target group "vote"
     restart: unless-stopped
 
   result:
     image: "{{ registry_user }}/voting-result:{{ result_tag }}"
     environment:
-      PG_HOST: db-read-a.voting.internal
+      PG_HOST: db-read-{{ zone }}.voting.internal
       PG_PASSWORD: "${POSTGRES_PASSWORD:?set in .env}"
     ports: ["8081:80"]                           # the load balancer's target group "result"
     restart: unless-stopped

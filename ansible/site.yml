@@ -16,8 +16,8 @@
         state: started
         enabled: true
 
-# Play 2: C1 first, because A1 and B1 need Redis and PostgreSQL.
-- name: Data server C1 - data disk, Redis, PostgreSQL
+# Play 2: C first, because A and B need Redis and PostgreSQL.
+- name: Data servers C1 and C2 - data disk, Redis, PostgreSQL
   hosts: role_data
   become: true
   tasks:
@@ -46,7 +46,7 @@
       vars:
         compose_template: compose-data.yml.j2
 
-# Play 3: A1 (Vote, Result) and B1 (Workers).
+# Play 3: A (Vote, Result) and B (Workers).
 - name: App servers - Vote and Result on A, Workers on B
   hosts: role_app:role_worker
   become: true

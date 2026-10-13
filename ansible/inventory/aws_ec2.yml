@@ -13,3 +13,4 @@ keyed_groups:
     prefix: role
 compose:
   ansible_host: instance_id         # Session Manager connects by instance ID, not by address
+  zone: placement.availability_zone[-1:]   # "us-east-1b" → "b": the last letter of the server's zone
