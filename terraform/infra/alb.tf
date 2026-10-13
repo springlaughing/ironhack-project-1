@@ -20,11 +20,11 @@ resource "aws_lb_target_group" "vote" {
   vpc_id   = aws_vpc.main.id
 
   health_check {
-    path                = "/"
-    matcher             = "200" # only "OK" counts as healthy
-    interval            = 15    # ask every 15 seconds
-    healthy_threshold   = 2     # 2 good answers in a row = healthy
-    unhealthy_threshold = 2     # 2 bad answers in a row = unhealthy
+    path                = "/health" # fault 3: healthy only if Redis answers
+    matcher             = "200"     # only "OK" counts as healthy
+    interval            = 15        # ask every 15 seconds
+    healthy_threshold   = 2         # 2 good answers in a row = healthy
+    unhealthy_threshold = 2         # 2 bad answers in a row = unhealthy
   }
 
   tags = { Name = "${var.name_prefix}-vote" }
