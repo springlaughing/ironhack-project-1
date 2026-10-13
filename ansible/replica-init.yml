@@ -1,0 +1,48 @@
+# One-off: make the replica (C2) a fresh copy of the primary.
+# DELETES the replica's own database files first. Never part of site.yml.
+# Run:  ansible-playbook replica-init.yml -e confirm=yes
+- name: Make the replica a fresh copy of the primary
+  hosts: role_data
+  become: true
+  tasks:
+    - name: Only on the replica, and only when asked explicitly
+      ansible.builtin.meta: end_host
+      when: db_role != 'replica' or confirm | default('no') != 'yes'
+
+    - name: Stop the database container on the replica (Redis keeps running)
+      ansible.builtin.command:
+        cmd: docker compose stop db
+        chdir: "{{ app_dir }}"
+      changed_when: true           # this playbook always changes the replica, that's its job
+
+
+    - name: Empty the database folder (a copy has to start from an empty folder)
+      ansible.builtin.command:
+        cmd: find /data/postgres -mindepth 1 -delete
+      changed_when: true
+
+    - name: The folder belongs to PostgreSQL's user and is private
+      ansible.builtin.file:
+        path: /data/postgres
+        state: directory
+        owner: "70"
+        group: "70"
+        mode: "0700"
+
+    - name: Copy the primary into the folder with pg_basebackup
+      ansible.builtin.command:
+        cmd: >
+          docker run --rm --user 70:70 --network host
+          -v /data/postgres:/var/lib/postgresql/data
+          -e PGPASSWORD={{ vault_replication_password }}
+          postgres:15-alpine
+          pg_basebackup -h db-write.voting.internal -U replicator
+          -D /var/lib/postgresql/data -R -X stream -c fast
+      no_log: true                 # the command contains the password
+      changed_when: true
+
+    - name: Start the database container again, now as a read-only copy
+      ansible.builtin.command:
+        cmd: docker compose up -d --wait db
+        chdir: "{{ app_dir }}"
+      changed_when: true
