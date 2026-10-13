@@ -44,6 +44,8 @@ locals {
     "redis-a"   = aws_instance.c1.private_ip
     "db-write"  = aws_instance.c1.private_ip
     "db-read-a" = aws_instance.c1.private_ip
+    "redis-b"   = aws_instance.c2.private_ip
+    "db-read-b" = aws_instance.c1.private_ip # → C2 in #19, once C2 is a copy
   }
 }
 
@@ -53,7 +55,7 @@ resource "aws_route53_record" "internal" {
 
   zone_id = aws_route53_zone.internal.zone_id
   name    = "${each.key}.${aws_route53_zone.internal.name}"
-  type    = "A"   # A record = name → IPv4 address
-  ttl     = 60    # servers may remember the answer for 60 seconds, so a change takes effect within a minute
+  type    = "A" # A record = name → IPv4 address
+  ttl     = 60  # servers may remember the answer for 60 seconds, so a change takes effect within a minute
   records = [each.value]
 }

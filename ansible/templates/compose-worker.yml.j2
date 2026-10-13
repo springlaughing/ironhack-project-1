@@ -2,7 +2,7 @@ services:
   worker:
     image: "{{ registry_user }}/voting-worker:{{ worker_tag }}"
     environment:
-      REDIS_HOST: redis-a.voting.internal
+      REDIS_HOST: redis-{{ zone }}.voting.internal
       DB_HOST: db-write.voting.internal
       DB_PASSWORD: "${POSTGRES_PASSWORD:?set in .env}"
     deploy:

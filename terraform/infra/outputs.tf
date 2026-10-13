@@ -32,11 +32,19 @@ output "servers" {
     a1 = { id = aws_instance.a1.id, ip = aws_instance.a1.private_ip }
     b1 = { id = aws_instance.b1.id, ip = aws_instance.b1.private_ip }
     c1 = { id = aws_instance.c1.id, ip = aws_instance.c1.private_ip }
+    a2 = { id = aws_instance.a2.id, ip = aws_instance.a2.private_ip }
+    b2 = { id = aws_instance.b2.id, ip = aws_instance.b2.private_ip }
+    c2 = { id = aws_instance.c2.id, ip = aws_instance.c2.private_ip }
   }
 }
 
 output "c1_data_volume" {
   value = aws_ebs_volume.c1_data.id
+}
+
+output "c2_data_volume" {
+  description = "ID of C2's data disk (Ansible finds the disk by it)"
+  value       = aws_ebs_volume.c2_data.id
 }
 
 output "site_url" {
