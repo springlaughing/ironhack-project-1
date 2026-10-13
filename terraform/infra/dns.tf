@@ -45,7 +45,7 @@ locals {
     "db-write"  = aws_instance.c1.private_ip
     "db-read-a" = aws_instance.c1.private_ip
     "redis-b"   = aws_instance.c2.private_ip
-    "db-read-b" = aws_instance.c1.private_ip # → C2 in #19, once C2 is a copy
+    "db-read-b" = aws_instance.c2.private_ip # zone b reads its own copy (#19)
   }
 }
 

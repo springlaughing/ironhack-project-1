@@ -16,7 +16,7 @@
         state: started
         enabled: true
 
-# Play 2: C first, because A and B need Redis and PostgreSQL.
+# Play 2: Data. C first, because A and B need Redis and PostgreSQL.
 - name: Data servers C1 and C2 - data disk, Redis, PostgreSQL
   hosts: role_data
   become: true
@@ -34,17 +34,54 @@
         opts: defaults,nofail      # nofail = C1 still boots if the disk is missing
         state: mounted
 
-    - name: Folders for the database and the Redis queue on the data disk
+    - name: Folder for the database on the data disk (private, like PostgreSQL wants it)
       ansible.builtin.file:
-        path: "{{ item }}"
+        path: /data/postgres
+        state: directory
+        owner: "70"                # the postgres user inside the postgres:15-alpine image
+        group: "70"
+        mode: "0700"               # only PostgreSQL may read its files
+
+    - name: Folder for the Redis queue on the data disk
+      ansible.builtin.file:
+        path: /data/redis
         state: directory
         mode: "0755"
-      loop: [/data/postgres, /data/redis]
 
     - name: Compose file and settings for C1
       ansible.builtin.include_tasks: tasks/deploy.yml
       vars:
         compose_template: compose-data.yml.j2
+
+    - name: Replication user on the primary (created once, password kept current)
+      ansible.builtin.command:
+        cmd: >
+          docker exec voting-db-1 psql -U postgres -v ON_ERROR_STOP=1 -c
+          "DO $$BEGIN
+             IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'replicator') THEN
+               CREATE ROLE replicator WITH REPLICATION LOGIN;
+             END IF;
+           END$$;
+           ALTER ROLE replicator PASSWORD '{{ vault_replication_password }}';"
+      no_log: true                 # the command contains the password
+      changed_when: false
+      when: db_role == 'primary'
+
+    - name: Let the replication user in from the data subnets (10.0.20.0/24 and 10.0.21.0/24)
+      ansible.builtin.lineinfile:
+        path: /data/postgres/pg_hba.conf
+        line: "host replication replicator 10.0.20.0/23 scram-sha-256"
+      register: hba
+      when: db_role == 'primary'
+
+    - name: Keep 1 GB of journal for the copy, then reload the settings (no restart)
+      ansible.builtin.command:
+        cmd: >
+          docker exec voting-db-1 psql -U postgres
+          -c "ALTER SYSTEM SET wal_keep_size = '1GB'"
+          -c "SELECT pg_reload_conf()"
+      changed_when: hba is changed
+      when: db_role == 'primary'
 
 # Play 3: A (Vote, Result) and B (Workers).
 - name: App servers - Vote and Result on A, Workers on B
