@@ -21,9 +21,9 @@ resource "aws_launch_template" "app" {
 
   # IMDSv2: a server must ask for a token before reading its role's keys.
   metadata_options {
-    http_endpoint = "enabled"
-    http_tokens   = "required"
-    http_put_response_hop_limit = 1   # the token can't travel past the server itself, so no container can get one
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 1 # the token can't travel past the server itself, so no container can get one
 
   }
 }
@@ -40,9 +40,9 @@ resource "aws_launch_template" "worker" {
   }
 
   metadata_options {
-    http_endpoint = "enabled"
-    http_tokens   = "required"
-    http_put_response_hop_limit = 1   # the token can't travel past the server itself, so no container can get one
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 1 # the token can't travel past the server itself, so no container can get one
 
   }
 }
@@ -76,11 +76,48 @@ resource "aws_instance" "c1" {
   iam_instance_profile   = aws_iam_instance_profile.server.name
 
   metadata_options {
-    http_endpoint = "enabled"
-    http_tokens   = "required"
-    http_put_response_hop_limit = 1   # the token can't travel past the server itself, so no container can get one
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 1 # the token can't travel past the server itself, so no container can get one
 
   }
 
   tags = { Name = "${var.name_prefix}-c1", Role = "data" }
+}
+
+# A2: Vote and Result, in the app subnet of zone b. Same recipe as A1.
+resource "aws_instance" "a2" {
+  subnet_id = aws_subnet.app["b"].id
+  launch_template {
+    id      = aws_launch_template.app.id
+    version = "$Latest"
+  }
+  tags = { Name = "${var.name_prefix}-a2", Role = "app" }
+}
+
+# B2: the Workers of zone b. Same recipe as B1.
+resource "aws_instance" "b2" {
+  subnet_id = aws_subnet.app["b"].id
+  launch_template {
+    id      = aws_launch_template.worker.id
+    version = "$Latest"
+  }
+  tags = { Name = "${var.name_prefix}-b2", Role = "worker" }
+}
+
+# C2: Redis b and, from #19, the database copy. In the data subnet of zone b.
+resource "aws_instance" "c2" {
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = var.instance_type
+  subnet_id              = aws_subnet.data["b"].id
+  vpc_security_group_ids = [aws_security_group.data.id]
+  iam_instance_profile   = aws_iam_instance_profile.server.name
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 1
+  }
+
+  tags = { Name = "${var.name_prefix}-c2", Role = "data" }
 }

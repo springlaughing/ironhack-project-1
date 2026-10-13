@@ -1,9 +1,9 @@
 # C1's data disk: lives separately from the server, so the data survives if C1 is replaced.
 resource "aws_ebs_volume" "c1_data" {
   availability_zone = aws_subnet.data["a"].availability_zone # must match C1's zone
-  size              = 10      # GB
+  size              = 10                                     # GB
   type              = "gp3"
-  encrypted         = true    # with AWS's default key for disks
+  encrypted         = true # with AWS's default key for disks
 
   tags = {
     Name     = "${var.name_prefix}-c1-data"
@@ -51,4 +51,23 @@ resource "aws_dlm_lifecycle_policy" "data" {
   }
 
   tags = { Name = "${var.name_prefix}-data-snapshots" }
+}
+
+# C2's data disk, in zone b. The same Snapshot tag puts it into the daily snapshots too.
+resource "aws_ebs_volume" "c2_data" {
+  availability_zone = aws_subnet.data["b"].availability_zone # must match C2's zone
+  size              = 10
+  type              = "gp3"
+  encrypted         = true
+
+  tags = {
+    Name     = "${var.name_prefix}-c2-data"
+    Snapshot = "${var.name_prefix}-daily"
+  }
+}
+
+resource "aws_volume_attachment" "c2_data" {
+  device_name = "/dev/sdf"
+  volume_id   = aws_ebs_volume.c2_data.id
+  instance_id = aws_instance.c2.id
 }

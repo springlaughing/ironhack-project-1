@@ -134,3 +134,15 @@ resource "aws_lb_listener_rule" "result" {
     target_group_arn = aws_lb_target_group.result.arn
   }
 }
+
+resource "aws_lb_target_group_attachment" "vote_a2" {
+  target_group_arn = aws_lb_target_group.vote.arn
+  target_id        = aws_instance.a2.id
+  port             = 8080
+}
+
+resource "aws_lb_target_group_attachment" "result_a2" {
+  target_group_arn = aws_lb_target_group.result.arn
+  target_id        = aws_instance.a2.id
+  port             = 8081
+}
