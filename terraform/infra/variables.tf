@@ -33,3 +33,20 @@ variable "instance_type" {
   type        = string
   default     = "t3.micro"
 }
+
+# Which data server runs the primary database. Failover = change this to "c2".
+variable "db_primary" {
+  description = "Data server with the primary database: c1 (zone a) or c2 (zone b)"
+  type        = string
+  default     = "c2"
+
+  validation {
+    condition     = contains(["c1", "c2"], var.db_primary)
+    error_message = "db_primary must be \"c1\" or \"c2\"."
+  }
+}
+
+variable "alarm_email" {
+  description = "Where alarm emails go (set in terraform.tfvars, not committed)"
+  type        = string
+}

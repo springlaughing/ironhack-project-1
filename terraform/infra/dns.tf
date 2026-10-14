@@ -38,14 +38,21 @@ resource "aws_route53_zone" "internal" {
   tags = { Name = "${var.name_prefix}-internal" }
 }
 
-# Which name points where. Step 2: everything lives on C1.
+# Which name points where.
+# Writes, and zone a's reads, go to the primary (var.db_primary).
+# Zone b always reads C2: before a failover it is the copy, after it the primary.
 locals {
+  data_ip = {
+    c1 = aws_instance.c1.private_ip
+    c2 = aws_instance.c2.private_ip
+  }
+
   internal_names = {
-    "redis-a"   = aws_instance.c1.private_ip
-    "db-write"  = aws_instance.c1.private_ip
-    "db-read-a" = aws_instance.c1.private_ip
-    "redis-b"   = aws_instance.c2.private_ip
-    "db-read-b" = aws_instance.c2.private_ip # zone b reads its own copy (#19)
+    "redis-a"   = local.data_ip.c1
+    "redis-b"   = local.data_ip.c2
+    "db-write"  = local.data_ip[var.db_primary]
+    "db-read-a" = local.data_ip[var.db_primary]
+    "db-read-b" = local.data_ip.c2
   }
 }
 

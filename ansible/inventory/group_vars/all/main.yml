@@ -14,4 +14,5 @@ app_dir: /opt/voting
 
 # How many copies and processes (change here, then run the playbook).
 worker_replicas: 3        # Worker containers on B1: test series 1 → 3 → 6
-vote_gunicorn_workers: 5  # requests Vote handles at the same time (image default: 4)
+vote_gunicorn_workers: 5  # processes (copies of Vote); each can use a CPU core. Image default: 4
+vote_gunicorn_threads: 4  # threads per process: while one vote waits (Redis, network), another runs. 1 = old behaviour
