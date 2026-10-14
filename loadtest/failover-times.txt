@@ -1,0 +1,9 @@
+10:37:35 zone a stopped
+10:45:27 alarm email
+10:46:42 confirmed: C1 is gone
+10:47:07 C1 fenced (stopped)
+10:49:13 C2 promoted
+10:52:29 db-write moved to C2
+11:03:04 roles recorded, failover committed
+11:10:18 zone a started
+11:15:18 C1 is now the copy of C2
