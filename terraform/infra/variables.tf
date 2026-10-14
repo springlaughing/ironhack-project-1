@@ -38,7 +38,7 @@ variable "instance_type" {
 variable "db_primary" {
   description = "Data server with the primary database: c1 (zone a) or c2 (zone b)"
   type        = string
-  default     = "c1"
+  default     = "c2"
 
   validation {
     condition     = contains(["c1", "c2"], var.db_primary)

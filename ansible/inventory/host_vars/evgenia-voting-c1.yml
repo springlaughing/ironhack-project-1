@@ -1,2 +1,2 @@
 data_volume_id: vol-016cf11c482279935
-db_role: primary        # accepts writes; C2 copies from here
+db_role: replica        # accepts writes; C2 copies from here
