@@ -179,6 +179,7 @@ Failover: [docs/runbook-failover.md](docs/runbook-failover.md).
 Every change starts as a GitHub issue, gets its own branch and Conventional
 Commits, and is merged by a pull request with `Closes #N` (squash merge).
 Changes of plan are recorded in the issues.
+Planning board: [GitHub Project](https://github.com/users/springlaughing/projects/1)
 
 ## Outlook
 
