@@ -16,14 +16,14 @@ export MAX_VUS="${MAX_VUS:-1200}"  # upper limit, in case even more are needed
 K6_WHERE="${K6_WHERE:-laptop}"     # laptop | cloudshell
 
 # Run one command on C1 through Ansible (Session Manager) and print only its output.
-c1() { (cd ansible && ansible role_data -b -o -m command -a "$1" 2>/dev/null) | sed 's/.*(stdout) //'; }
+c1() { (cd ansible && ansible evgenia-voting-c1 -b -o -m command -a "$1" 2>/dev/null) | sed 's/.*(stdout) //'; }
 count() { c1 "docker exec voting-db-1 psql -U postgres -tAc \"SELECT COUNT(*) FROM votes WHERE id LIKE '$1'\""; }
 
 echo "Removing earlier test votes..."
 c1 "docker exec voting-db-1 psql -U postgres -qc \"DELETE FROM votes WHERE id LIKE 'k6%'\"" > /dev/null
 
 echo "Starting the measuring loop on C1 (it waits for the burst)..."
-(cd ansible && ansible role_data -b -m script -a "../loadtest/measure-c1.sh" > /dev/null 2>&1) &
+(cd ansible && ansible evgenia-voting-c1 -b -m script -a "../loadtest/measure-c1.sh" > /dev/null 2>&1) &
 measure_pid=$!
 
 if [ "$K6_WHERE" = "cloudshell" ]; then
